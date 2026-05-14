@@ -560,6 +560,11 @@
     const note = noteInput.value.trim();
     if (!barcode) { showToast('Enter or scan a barcode first.', 'error'); barcodeInput.focus(); return; }
     if (!bin) { showToast('Enter a bin ID.', 'error'); binInput.focus(); return; }
+    // Dismiss keyboard on mobile before assigning
+    document.activeElement.blur();
+    barcodeInput.blur();
+    binInput.blur();
+    noteInput.blur();
     const now = new Date();
     const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     assignments.unshift({ barcode, bin, note, time, datetime: now.toISOString() });
@@ -567,7 +572,6 @@
     showToast(`${barcode} → ${bin}`, 'success');
     barcodeInput.value = '';
     noteInput.value = '';
-    barcodeInput.focus();
   }
 
   assignBtn.addEventListener('click', doAssign);
