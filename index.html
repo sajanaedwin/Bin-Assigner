@@ -170,20 +170,7 @@
   .scan-corner.bl { bottom: 20%; left: 15%; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
   .scan-corner.br { bottom: 20%; right: 15%; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
 
-  .scan-beam {
-    position: absolute;
-    left: 15%; right: 15%;
-    height: 2px;
-    background: var(--scan-line);
-    top: 20%;
-    animation: beam 2s ease-in-out infinite;
-    box-shadow: 0 0 8px var(--scan-line);
-  }
-
-  @keyframes beam {
-    0%, 100% { top: 20%; }
-    50% { top: 80%; }
-  }
+  .scan-beam { display: none; }
 
   #cam-status {
     position: absolute;
