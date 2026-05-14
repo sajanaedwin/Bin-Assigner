@@ -617,16 +617,25 @@
 
   async function startCamera() {
     try {
-      // ZXing works on iOS Safari, Android, Chrome, Samsung Internet — all browsers
-      zxingReader = new ZXing.BrowserMultiFormatReader();
+      // iOS Safari requires getUserMedia to be called DIRECTLY inside a tap handler
+      // — no awaits before it, otherwise iOS silently blocks it
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+      } catch(permErr) {
+        showToast('Camera permission denied. Go to Settings → Safari → Camera → Allow.', 'error');
+        return;
+      }
 
-      // Get rear camera device id
-      const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-      const rearDevice = devices.find(d =>
-        /back|rear|environment/i.test(d.label)
-      ) || devices[devices.length - 1]; // fallback to last device
-
-      const deviceId = rearDevice ? rearDevice.deviceId : undefined;
+      // Show video immediately with the stream we already have permission for
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true); // critical for iOS
+      video.setAttribute('autoplay', true);
+      video.muted = true;
+      await video.play();
 
       video.style.display = 'block';
       camPlaceholder.style.display = 'none';
@@ -635,10 +644,13 @@
       camStatus.style.display = 'block';
       camStatus.textContent = 'Scanning…';
 
+      // Now hand the stream to ZXing for decoding
+      zxingReader = new ZXing.BrowserMultiFormatReader();
       let lastVal = '';
       let lastTime = 0;
 
-      await zxingReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+      // Use decodeFromStream since we already have the stream
+      zxingReader.decodeFromStream(stream, video, (result, err) => {
         if (result) {
           const val = result.getText();
           const now = Date.now();
@@ -662,13 +674,14 @@
       });
 
     } catch(e) {
-      showToast('Camera access denied. Check browser permissions.', 'error');
+      showToast('Camera error: ' + e.message, 'error');
       console.error(e);
     }
   }
 
   function stopCamera() {
     if (zxingReader) { zxingReader.reset(); zxingReader = null; }
+    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
     video.style.display = 'none';
     camPlaceholder.style.display = '';
     scanOverlay.style.display = 'none';
